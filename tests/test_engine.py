@@ -140,4 +140,4 @@ def test_engine_consuming_events(engine):
     engine.run()
 
     assert engine.state == EngineState.FINISHED, "Engine is in wrong state"
-    assert engine.now == 6, f"Simulation should be at timestep 8, not {engine.now}"
+    assert engine.now == 6, f"Simulation should be at timestep 6, not {engine.now}"

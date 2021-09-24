@@ -1,16 +1,29 @@
 import abc
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterator, Optional, TypeVar
 
 if TYPE_CHECKING:
     from .engine import Engine  # pragma: no cover
 
+__all__ = ["Event", "EventError", "StopEngineError"]
 
 T = TypeVar("T")  # Define a type var for the event class
 
 
+class EventError(Exception):
+    """Base error raised by Events"""
+
+    def __init__(self, event: T, msg: str):
+        self.event = event
+        super().__init__(msg)
+
+
+class StopEngineError(EventError):
+    """Raised by Events to indicate that the simulation should be aborted"""
+
+
 @dataclass(order=True)
-class Event(abc.ABC):
+class Event(Generic[T]):
     """The core Event object"""
 
     timestamp: int
@@ -33,15 +46,3 @@ class Event(abc.ABC):
         The engine will pass a yet ill-defined simulation context dictionary that should contain all relevant context
         objects an event would need
         """
-
-
-class EventError(Exception):
-    """Base error raised by Events"""
-
-    def __init__(self, event: Event, msg: str):
-        self.event = event
-        super().__init__(msg)
-
-
-class StopEngineError(EventError):
-    """Raised by Events to indicate that the simulation should be aborted"""

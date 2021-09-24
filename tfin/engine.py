@@ -6,6 +6,21 @@ from typing import List, NamedTuple
 
 from .event import Event, EventError, StopEngineError
 
+__all__ = ["Engine", "EngineError", "EngineState", "EngineStatus"]
+
+
+class EngineError(Exception):  # pragma: no cover
+    """The simulation encountered an error"""
+
+    def __init__(self, now: int, msg: str):
+
+        self.now = now
+        self.message = msg
+        super().__init__(str(self))
+
+    def __str__(self):
+        return f"{self.now}: {self.message}"
+
 
 class EngineState(Enum):
     """Enumeration of allowed engine states"""
@@ -25,27 +40,14 @@ class EngineStatus(NamedTuple):
     message: str
 
 
-class EngineError(Exception):  # pragma: no cover
-    """The simulation encountered an error"""
-
-    def __init__(self, now: int, msg: str):
-
-        self.now = now
-        self.message = msg
-        super().__init__(str(self))
-
-    def __str__(self):
-        return f"{self.now}: {self.message}"
-
-
 @dataclass
 class Engine:
-    """The fundamental simulation engine.
+    """The core simulation engine.
 
     The engine is responsible for managing the event queue and running the entire simulation
     """
 
-    name: str = ""  # The name of this engine
+    name: str = "Unnamed"  # The name of this engine
 
     def __post_init__(self):
         self.now = 0
@@ -56,9 +58,7 @@ class Engine:
         )
 
     def __str__(self):
-        return (
-            f"Engine({self.name}) - {len(self.queue)} events - Status: '{self.message}'"
-        )
+        return f"Engine({self.name}) - {len(self.queue)} events - Status: '{self.state.name}'"
 
     @property
     def status(self):
@@ -113,32 +113,30 @@ class Engine:
         )
 
         while True:
-            try:
-                event = heapq.heappop(self.queue)
-            except IndexError:  # Queue is empty
+            if not self.queue:
                 self.finish(f"Simulation finished at {self.now}")
                 return
-            else:
 
-                self.now = event.timestamp
+            event = heapq.heappop(self.queue)
+            self.now = event.timestamp
 
-                if stop_at is not None and event.timestamp > stop_at:
-                    self.now = stop_at
-                    self.stop(f"Simulation max time {stop_at} exceeded")
-                    return
+            if stop_at is not None and event.timestamp > stop_at:
+                self.now = stop_at
+                self.stop(f"Simulation max time {stop_at} exceeded")
+                return
 
-                try:
-                    for evt in event():
-                        if evt:
-                            self.schedule(evt)
+            try:
+                for evt in event():
+                    if evt:
+                        self.schedule(evt)
 
-                except StopEngineError as e:
-                    self.stop(
-                        f"Simulation was stopped by event {event} at t {self.now}: {e}"
-                    )
-                    return
-                except EventError as e:
-                    self.abort(
-                        f"Simulation was aborted by event {event} at t{self.now}: {e}"
-                    )
-                    return
+            except StopEngineError as e:
+                self.stop(
+                    f"Simulation was stopped by event {event} at t {self.now}: {e}"
+                )
+                return
+            except EventError as e:
+                self.abort(
+                    f"Simulation was aborted by event {event} at t{self.now}: {e}"
+                )
+                return

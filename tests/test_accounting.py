@@ -32,6 +32,13 @@ def coa():
     return ChartOfAccounts()
 
 
+def test_account_string(asset):
+    """Checks the account string is represented"""
+
+    asset.set_balance(120)
+    assert "$120.00" in str(asset), str(asset)
+
+
 def test_account_types():
     """Checks the Account typing design"""
     cash_acct = Asset(name="Cash")

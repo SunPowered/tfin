@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable, Dict, Optional, Protocol, Type, Union, cast
+from typing import Callable, Dict, Optional, Protocol, Type, Union
 
 __all__ = [
     "Account",
@@ -73,6 +73,9 @@ class Account(AccountMixin, AccountInterface):
 
     Do not instantiate directly.  It is useful, however, as a typing reference and
     for isinstance() checks"""
+
+    def __str__(self):
+        return f"{self.name}[{self.account_type.name} - ${self.balance:.2f}]"
 
     @property
     def balance(self):

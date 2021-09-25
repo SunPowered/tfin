@@ -118,25 +118,27 @@ class Engine:
                 return
 
             event = heapq.heappop(self.queue)
-            self.now = event.timestamp
 
             if stop_at is not None and event.timestamp > stop_at:
                 self.now = stop_at
                 self.stop(f"Simulation max time {stop_at} exceeded")
                 return
+            else:
+                self.now = event.timestamp
 
-            try:
-                for evt in event():
-                    if evt:
-                        self.schedule(evt)
+            if not self.consume_event(event):
+                return
 
-            except StopEngineError as e:
-                self.stop(
-                    f"Simulation was stopped by event {event} at t {self.now}: {e}"
-                )
-                return
-            except EventError as e:
-                self.abort(
-                    f"Simulation was aborted by event {event} at t{self.now}: {e}"
-                )
-                return
+    def consume_event(self, event: Event):
+        """Processes an event, checks for errors and schedules any events that are yielded"""
+        try:
+            for evt in event():
+                if evt:
+                    self.schedule(evt)
+
+        except StopEngineError as e:
+            self.stop(f"Simulation was stopped by event {event} at t {self.now}: {e}")
+        except EventError as e:
+            self.abort(f"Simulation was aborted by event {event} at t{self.now}: {e}")
+        else:
+            return True

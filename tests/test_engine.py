@@ -81,7 +81,9 @@ def test_engine_status_stopped(engine):
         EngineState.STOPPED
     ), f"Engine state should be STOPPED, got {engine.state}"
 
-    assert engine.now == stop_at, f"Simulation time should be stopped at {stop_at}"
+    assert (
+        engine.now == stop_at
+    ), f"Simulation time should be stopped at {stop_at}, not {engine.now}"
 
 
 def test_engine_stopped_by_event(engine):

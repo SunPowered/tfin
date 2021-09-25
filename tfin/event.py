@@ -1,19 +1,17 @@
 import abc
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Generic, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Iterator, Optional
 
 if TYPE_CHECKING:
     from .engine import Engine  # pragma: no cover
 
 __all__ = ["Event", "EventError", "StopEngineError"]
 
-T = TypeVar("T")  # Define a type var for the event class
-
 
 class EventError(Exception):
     """Base error raised by Events"""
 
-    def __init__(self, event: T, msg: str):
+    def __init__(self, event: "Event", msg: str):
         self.event = event
         super().__init__(msg)
 
@@ -23,7 +21,7 @@ class StopEngineError(EventError):
 
 
 @dataclass(order=True)
-class Event(Generic[T]):
+class Event:
     """The core Event object"""
 
     timestamp: int
@@ -35,7 +33,7 @@ class Event(Generic[T]):
         return self.call(*args, **kwargs)
 
     @abc.abstractclassmethod
-    def call(self, ctx: dict = {}) -> Iterator[Optional[T]]:
+    def call(self, ctx: dict = {}) -> Iterator[Optional["Event"]]:
         """The event callback function.
 
         This is the business end of the event.  It's job is to decide from the context which events to fire and when.

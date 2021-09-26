@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, NamedTuple
 
-from .event import Event, EventError, StopEngineError
+from .event import EventError, EventLike, StopEngineError
 
 __all__ = ["Engine", "EngineError", "EngineState", "EngineStatus"]
 
@@ -51,7 +51,7 @@ class Engine:
 
     def __post_init__(self):
         self.now = 0
-        self.queue: List[Event] = []
+        self.queue: List[EventLike] = []
         self._status: EngineStatus = EngineStatus(
             state=EngineState.WAITING,
             message="Initialized",
@@ -83,10 +83,10 @@ class Engine:
         """Returns whether the current engine state evaluates to the provided one"""
         return self.state == state
 
-    def schedule(self, event: Event) -> None:
+    def schedule(self, event: EventLike) -> None:
         """Schedule an event to the queue"""
 
-        if isinstance(event, Event):
+        if isinstance(event, EventLike):
             heapq.heappush(self.queue, event)
 
     def stop(self, msg: str) -> None:
@@ -129,7 +129,7 @@ class Engine:
             if not self.consume_event(event):
                 return
 
-    def consume_event(self, event: Event):
+    def consume_event(self, event: EventLike):
         """Processes an event, checks for errors and schedules any events that are yielded"""
         try:
             for evt in event():

@@ -1,6 +1,6 @@
 """Test the Event class"""
 
-from tfin.engine import Event
+from tfin.event import Event
 
 
 class CoreEvent(Event):

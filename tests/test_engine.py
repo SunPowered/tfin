@@ -1,6 +1,6 @@
 """Test the Event engine"""
 import pytest
-from tfin.engine import Engine, EngineState, Event
+from tfin.engine import Engine, EngineState
 from tfin.event import Event, EventError, StopEngineError
 
 
@@ -11,10 +11,6 @@ def engine():
 
 class EmptyEvent(Event):
     """An event to use in testing"""
-
-    def call(self):
-        """Empty call method"""
-        yield None
 
 
 def event_factory(event_cls=EmptyEvent, timestamp=0, name="Test Event", data={}):

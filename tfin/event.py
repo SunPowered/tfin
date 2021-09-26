@@ -1,11 +1,8 @@
-import abc
+from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import Iterator, Optional, Protocol, runtime_checkable
 
-if TYPE_CHECKING:
-    from .engine import Engine  # pragma: no cover
-
-__all__ = ["Event", "EventError", "StopEngineError"]
+__all__ = ["Event", "EventError", "StopEngineError", "EventLike"]
 
 
 class EventError(Exception):
@@ -20,6 +17,18 @@ class StopEngineError(EventError):
     """Raised by Events to indicate that the simulation should be aborted"""
 
 
+@runtime_checkable
+class EventLike(Protocol):
+    """An Event like interface to use in typing"""
+
+    timestamp: int
+    name: str
+
+    @abstractmethod
+    def __call__(self, *args):
+        """Executes the event callback"""
+
+
 @dataclass(order=True)
 class Event:
     """The core Event object"""
@@ -32,7 +41,6 @@ class Event:
         """Convenience method to wrap the `call` method."""
         return self.call(*args, **kwargs)
 
-    @abc.abstractclassmethod
     def call(self, ctx: dict = {}) -> Iterator[Optional["Event"]]:
         """The event callback function.
 
@@ -44,3 +52,4 @@ class Event:
         The engine will pass a yet ill-defined simulation context dictionary that should contain all relevant context
         objects an event would need
         """
+        yield None

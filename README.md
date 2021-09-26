@@ -56,4 +56,7 @@ It is expected that any active non-debug feature is covered by the test suite, a
 
 ## History
 
-* 0.1.0 - Sep 2021 - Project structure, basic event and event engine
+### Prerelease
+
+* 0.1.0 - Sep 24, 2021 - Project structure, basic event and event engine
+* 0.1.1 - Sep 26, 2021 - Accounting module.  Accounts, ChartOfAccounts, and Transaction events

@@ -32,6 +32,21 @@ def coa():
     return ChartOfAccounts()
 
 
+@pytest.fixture
+def transaction():
+    return Transaction(timestamp=2, name="Test Transaction")
+
+
+@pytest.fixture
+def filled_transaction(transaction, asset, expense):
+    asset.set_balance(100)
+
+    transaction.add_credit(TransactionItem(asset, 20))
+    transaction.add_debit(TransactionItem(expense, 20))
+
+    return transaction
+
+
 def test_account_string(asset):
     """Checks the account string is represented"""
 
@@ -138,3 +153,36 @@ def test_coa_by_name_and_type(coa, asset):
 
     account = coa.by_name_and_type({}, 2)
     assert not account, "Account returned when garbage data given"
+
+
+def test_transaction(filled_transaction):
+    """Test creation and inspection of a transaction"""
+
+    assert filled_transaction.total_debits == 20, "Debit not added correctly"
+    assert filled_transaction.total_credits == 20, "Credit not added correctly"
+    assert filled_transaction.n_entries == 2, "N_entries not correct"
+    assert filled_transaction.is_balanced, "Balanced transaction shown as unbalanced"
+
+    asset = filled_transaction.credits[0].account
+    expense = filled_transaction.debits[0].account
+
+    filled_transaction()
+
+    assert expense.balance == 20, "Expense balance should be 20"
+    assert asset.balance == 80
+
+
+def test_bad_transaction(transaction, asset):
+    """Tests bad formation of transactions"""
+
+    asset.set_balance(100)
+
+    transaction.add_credit(25.0)
+    transaction.add_debit("34")
+    assert transaction.n_entries == 0
+
+    transaction.add_credit(TransactionItem(asset, 55))
+
+    transaction()
+
+    assert asset.balance == 100

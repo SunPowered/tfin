@@ -2,7 +2,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable, Dict, Optional, Protocol, Type, Union
+from typing import Callable, Dict, List, Optional, Type, Union
+
+from .event import Event
 
 __all__ = [
     "Account",
@@ -14,6 +16,8 @@ __all__ = [
     "AccountType",
     "accounts_by_type",
     "ChartOfAccounts",
+    "TransactionItem",
+    "Transaction",
 ]
 
 
@@ -27,25 +31,6 @@ class AccountType(Enum):
 
 N = Union[float, int]  # Numeric type
 C = Callable[[float, float], float]  # Numeric callable operator type
-
-
-class AccountLike(Protocol):
-    """The Account Protocol interface"""
-
-    account_type: AccountType
-
-    @property
-    @abstractmethod
-    def balance(self):
-        """The balance of the account"""
-
-    @abstractmethod
-    def credit(self, amount: N):
-        """Credit the account"""
-
-    @abstractmethod
-    def debit(self, amount: N):
-        """Debit the account"""
 
 
 @dataclass
@@ -226,3 +211,86 @@ class ChartOfAccounts:
         """Look for an account by its name and type, return it if found, None otherwise"""
         accounts = self.by_type(account_type)
         return accounts.get(account_name, None) if accounts else None
+
+
+@dataclass
+class TransactionItem:
+    """Object to store relevant transaction item data"""
+
+    account: Account
+    amount: float
+
+
+@dataclass
+class Transaction(Event):
+    """A transaction event to manage accounting transactions between accounts
+
+    A transaction consists of both debits and credits.  Each debit/credit item
+    belongs to an account and an amount"""
+
+    timestamp: int
+    name: str
+
+    def __post_init__(self):
+        self.clear()
+
+    # def __str__(self):
+    #    return f"{self.name}[{self.n_entries} entries][{'UN' if not self.is_balanced else ''}BALANCED]"
+
+    def clear(self):
+        """Clears the current transaction of all debits and credits"""
+        self._debits: List[TransactionItem] = []
+        self._credits: List[TransactionItem] = []
+
+    @property
+    def debits(self):
+        """The debits stored in this transaction"""
+        return self._debits
+
+    @property
+    def credits(self):
+        """The credits stored in this transaction"""
+        return self._credits
+
+    @property
+    def is_balanced(self) -> bool:
+        """A boolean property indicating whether the current transaction is balanced"""
+        return self.total_credits == self.total_debits
+
+    @property
+    def n_entries(self) -> int:
+        """An integer property of the total number of elements in the transaction"""
+        return len(self._credits) + len(self._debits)
+
+    @property
+    def total_debits(self) -> float:
+        """A float property of the total amount of debits in the transaction"""
+        return sum([i.amount for i in self._debits])
+
+    @property
+    def total_credits(self) -> float:
+        """A float property of the total amount of credits in the transaction"""
+        return sum([i.amount for i in self._credits])
+
+    def add_debit(self, item: TransactionItem):
+        """Adds a TransactionItem to the debits"""
+        if not isinstance(item, TransactionItem):
+            return
+        self._debits.append(item)
+
+    def add_credit(self, item: TransactionItem):
+        """Adds a TransactionItem to the credits"""
+        if not isinstance(item, TransactionItem):
+            return
+        self._credits.append(item)
+
+    def call(self):
+        """Executes the transaction, applying credits and debits to accounts"""
+        if not self.is_balanced:
+            return
+
+        for item in self._credits:
+            item.account.credit(item.amount)
+
+        for item in self._debits:
+            item.account.debit(item.amount)

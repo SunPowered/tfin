@@ -1,5 +1,5 @@
 """Allows for an accounting style journal of accounts and transactions"""
-
+from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, Optional, Protocol, Type, Union
@@ -25,40 +25,31 @@ class AccountType(Enum):
     EXPENSE = auto()
 
 
-#
-# The following few bits of Interface / Dataclass Mixin hell is due to mypy not being able to respond
-#   correctly to a Dataclass that inherits from an ABC (ie typing.Protocol)
-#
-# I found a workaround from which I based this design:
-#       https://github.com/python/mypy/issues/5374#issuecomment-582093112
-#  FIXME: Make this pretty when mypy can take the heat
-#
-# Also, see: https://bugs.python.org/issue45081
-
-N = Union[float, int]
-C = Callable[[float, float], float]
+N = Union[float, int]  # Numeric type
+C = Callable[[float, float], float]  # Numeric callable operator type
 
 
-class AccountInterface(Protocol):  # pragma: no cover
+class AccountLike(Protocol):
     """The Account Protocol interface"""
 
     account_type: AccountType
-    debit_op: C
-    credit_op: C
 
     @property
-    def balance(self) -> float:
-        ...
+    @abstractmethod
+    def balance(self):
+        """The balance of the account"""
 
+    @abstractmethod
     def credit(self, amount: N):
-        ...
+        """Credit the account"""
 
+    @abstractmethod
     def debit(self, amount: N):
-        ...
+        """Debit the account"""
 
 
 @dataclass
-class AccountMixin:
+class AccountBase:
     """Account dataclass."""
 
     name: str
@@ -67,22 +58,26 @@ class AccountMixin:
     def __post_init__(self):
         self._balance = self.starting_balance
 
-
-class Account(AccountMixin, AccountInterface):
-    """Account abstract dataclass.
-
-    Do not instantiate directly.  It is useful, however, as a typing reference and
-    for isinstance() checks"""
-
-    def __str__(self):
-        return f"{self.name}[{self.account_type.name} - ${self.balance:.2f}]"
-
     @property
     def balance(self):
         return self._balance
 
     def set_balance(self, amount: N):
         self._balance = float(amount)
+
+    def __str__(self):
+        return f"{self.name}[{self.account_type.name} - ${self.balance:.2f}]"
+
+
+class Account(AccountBase):
+    """Account abstract dataclass.
+
+    Do not instantiate directly.  It is useful, however, as a typing reference and
+    for isinstance() checks"""
+
+    debit_op: C
+    credit_op: C
+    account_type: AccountType
 
     def debit(self, amount: N):
         """Debit the account by an amount."""
@@ -228,6 +223,6 @@ class ChartOfAccounts:
         account_name: str,
         account_type: Union[AccountType, str],
     ) -> Optional[Account]:
-
+        """Look for an account by its name and type, return it if found, None otherwise"""
         accounts = self.by_type(account_type)
         return accounts.get(account_name, None) if accounts else None

@@ -171,7 +171,32 @@ class ChartOfAccounts:
         if accounts and account.name in accounts:
             del self._accounts[account.account_type.name][account.name]
 
-    def create_account(
+    def _create_account(self, acc_cls: Type[Account], name: str, balance: float = 0.0):
+        account = acc_cls(name, balance)
+        self.add_account(account)
+        return account
+
+    def create_asset_account(self, name: str, balance: float = 0.0) -> Account:
+        """Helper method to create and add an Asset account by parameters"""
+        return self._create_account(Asset, name, balance)
+
+    def create_liability_account(self, name: str, balance: float = 0.0) -> Account:
+        """Helper method to create and add a Liability account by parameters"""
+        return self._create_account(Liability, name, balance)
+
+    def create_income_account(self, name: str, balance: float = 0.0) -> Account:
+        """Helper method to create and add an Income account by parameters"""
+        return self._create_account(Income, name, balance)
+
+    def create_expense_account(self, name: str, balance: float = 0.0) -> Account:
+        """Helper method to create and add an Expense account by parameters"""
+        return self._create_account(Expense, name, balance)
+
+    def create_equity_account(self, name: str, balance: float = 0.0) -> Account:
+        """Helper method to create and add an Equity account by parameters"""
+        return self._create_account(Equity, name, balance)
+
+    def create_and_add_account(
         self,
         account_type: Union[AccountType, str],
         account_name: str,
@@ -272,17 +297,31 @@ class Transaction(Event):
         """A float property of the total amount of credits in the transaction"""
         return sum([i.amount for i in self._credits])
 
-    def add_debit(self, item: TransactionItem):
+    def add_debit(self, item: Union[Account, TransactionItem], amount: float = None):
         """Adds a TransactionItem to the debits"""
-        if not isinstance(item, TransactionItem):
+        if isinstance(item, Account):
+            if amount is None:
+                return
+            trans_item = TransactionItem(item, amount)
+        elif isinstance(item, TransactionItem):
+            trans_item = item
+        else:
             return
-        self._debits.append(item)
 
-    def add_credit(self, item: TransactionItem):
+        self._debits.append(trans_item)
+
+    def add_credit(self, item: Union[Account, TransactionItem], amount: float = None):
         """Adds a TransactionItem to the credits"""
-        if not isinstance(item, TransactionItem):
+        if isinstance(item, Account):
+            if amount is None:
+                return
+            trans_item = TransactionItem(item, amount)
+        elif isinstance(item, TransactionItem):
+            trans_item = item
+        else:
             return
-        self._credits.append(item)
+
+        self._credits.append(trans_item)
 
     def call(self):
         """Executes the transaction, applying credits and debits to accounts"""

@@ -108,10 +108,26 @@ def test_coa_account_management(coa, asset):
     coa.remove_account("Test Asset")
     assert coa.has_account(asset), "Bad account name still removed an account"
 
+    # Helper creation methods
+    new_asset = coa.create_asset_account("New Asset", 25.0)
+    assert coa.has_account(new_asset)
+
+    new_liab = coa.create_liability_account("New Liability", 25.0)
+    assert coa.has_account(new_liab)
+
+    new_income = coa.create_income_account("New Income", 25.0)
+    assert coa.has_account(new_income)
+
+    new_expense = coa.create_expense_account("New Expense", 25.0)
+    assert coa.has_account(new_expense)
+
+    new_equity = coa.create_equity_account("New Equity", 35.0)
+    assert coa.has_account(new_equity)
+
 
 def test_coa_create_account(coa):
     """Test the create_account method on the ChartOfAccounts"""
-    account = coa.create_account(
+    account = coa.create_and_add_account(
         account_type=AccountType.EXPENSE,
         account_name="Expense Account",
         starting_balance=55,
@@ -125,13 +141,13 @@ def test_coa_create_account(coa):
     coa.remove_account(account)
     assert len(coa) == 0, "Created account not removed"
 
-    account = coa.create_account(
+    account = coa.create_and_add_account(
         account_type="income", account_name="Good Account Type"
     )
     assert account, "Account not created by account_type string"
     coa.remove_account(account)
 
-    account = coa.create_account(
+    account = coa.create_and_add_account(
         account_type="not_a_type", account_name="Bad Account Type"
     )
     assert not account, "Account shouldnt be created with a bad AccountType"
@@ -172,6 +188,16 @@ def test_transaction(filled_transaction):
     assert asset.balance == 80
 
 
+def test_transaction_by_account(transaction, asset, expense):
+    """Test adding a transaction by account and amount rather that a dedicated TransactionItem"""
+
+    transaction.add_debit(asset, 50)
+    transaction.add_credit(expense, 50)
+
+    assert transaction.n_entries == 2
+    assert transaction.is_balanced
+
+
 def test_bad_transaction(transaction, asset):
     """Tests bad formation of transactions"""
 
@@ -186,3 +212,9 @@ def test_bad_transaction(transaction, asset):
     transaction()
 
     assert asset.balance == 100
+
+    transaction.clear()
+    transaction.add_debit(asset)
+    transaction.add_credit(asset)
+
+    assert transaction.n_entries == 0

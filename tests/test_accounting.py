@@ -34,7 +34,7 @@ def coa():
 
 @pytest.fixture
 def transaction():
-    return Transaction(timestamp=2, name="Test Transaction")
+    return Transaction(timestep=2, name="Test Transaction")
 
 
 @pytest.fixture
@@ -182,10 +182,23 @@ def test_transaction(filled_transaction):
     asset = filled_transaction.credits[0].account
     expense = filled_transaction.debits[0].account
 
-    filled_transaction()
+    for _ in filled_transaction.call():
+        pass
 
     assert expense.balance == 20, "Expense balance should be 20"
     assert asset.balance == 80
+
+
+def test_unbalanced_transaction(transaction, asset):
+    """Ensure an unbalanced transaction does not execute"""
+    transaction.add_credit(asset, 100)
+
+    assert not transaction.is_balanced
+
+    for _ in transaction.call():
+        pass
+
+    assert asset.balance == 0
 
 
 def test_transaction_by_account(transaction, asset, expense):
@@ -209,7 +222,7 @@ def test_bad_transaction(transaction, asset):
 
     transaction.add_credit(TransactionItem(asset, 55))
 
-    transaction()
+    transaction.call()
 
     assert asset.balance == 100
 

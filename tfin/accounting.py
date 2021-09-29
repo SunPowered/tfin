@@ -1,10 +1,9 @@
 """Allows for an accounting style journal of accounts and transactions"""
-from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
 
-from .event import Event
+from .engine import Event
 
 __all__ = [
     "Account",
@@ -41,7 +40,7 @@ class AccountBase:
     starting_balance: float = 0.0
 
     def __post_init__(self):
-        self._balance = self.starting_balance
+        self._balance = float(self.starting_balance)
 
     @property
     def balance(self):
@@ -246,21 +245,15 @@ class TransactionItem:
     amount: float
 
 
-@dataclass
 class Transaction(Event):
     """A transaction event to manage accounting transactions between accounts
 
     A transaction consists of both debits and credits.  Each debit/credit item
     belongs to an account and an amount"""
 
-    timestamp: int
-    name: str
-
-    def __post_init__(self):
+    def __init__(self, timestep: int, name: str):
+        super().__init__(timestep, name)
         self.clear()
-
-    # def __str__(self):
-    #    return f"{self.name}[{self.n_entries} entries][{'UN' if not self.is_balanced else ''}BALANCED]"
 
     def clear(self):
         """Clears the current transaction of all debits and credits"""
@@ -323,7 +316,7 @@ class Transaction(Event):
 
         self._credits.append(trans_item)
 
-    def call(self):
+    def call(self, *args):
         """Executes the transaction, applying credits and debits to accounts"""
         if not self.is_balanced:
             return
@@ -333,3 +326,5 @@ class Transaction(Event):
 
         for item in self._debits:
             item.account.debit(item.amount)
+
+        yield None

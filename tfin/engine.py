@@ -1,12 +1,21 @@
 """The core event-based simulation engine"""
 import heapq
-from dataclasses import dataclass
+from abc import abstractmethod
+from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, NamedTuple
+from typing import Iterator, List, NamedTuple, Optional, Protocol, runtime_checkable
 
-from .event import EventError, EventLike, StopEngineError
+# from .event import EventError, EventLike, StopEngineError
 
-__all__ = ["Engine", "EngineError", "EngineState", "EngineStatus"]
+__all__ = [
+    "Engine",
+    "EngineError",
+    "EngineState",
+    "EngineStatus",
+    "Event",
+    "EventError",
+    "StopEngineError",
+]
 
 
 class EngineError(Exception):  # pragma: no cover
@@ -40,6 +49,58 @@ class EngineStatus(NamedTuple):
     message: str
 
 
+class EventError(Exception):
+    """Base error raised by Events"""
+
+    def __init__(self, event: "Event", msg: str):
+        self.event = event
+        super().__init__(msg)
+
+
+class StopEngineError(EventError):
+    """Raised by Events to indicate that the simulation should be aborted"""
+
+
+@runtime_checkable
+class EventLike(Protocol):
+    """An Event like interface to use in typing"""
+
+    timestep: int
+    name: str
+
+    @abstractmethod
+    def call(self, *args):
+        """Executes the event callback"""
+
+
+class Event:
+    """The core Event object"""
+
+    def __init__(self, timestep: int, name: str, data: dict = {}):
+        self.timestep = timestep
+        self.name = name
+        self.data = data
+
+    def call(self, ctx: dict = {}) -> Iterator[Optional["Event"]]:
+        """The event callback function.
+
+        This is the business end of the event.  It's job is to decide from the context which events to fire and when.
+
+        The function yields events until exhausted.  The engine will consume all yielded events and execute them in
+        the order they are yielded.
+
+        The engine will pass a yet ill-defined simulation context dictionary that should contain all relevant context
+        objects an event would need
+        """
+        yield None
+
+
+@dataclass(order=True)
+class QueueItem:
+    timestep: int
+    event: EventLike = field(compare=False)
+
+
 @dataclass
 class Engine:
     """The core simulation engine.
@@ -51,7 +112,7 @@ class Engine:
 
     def __post_init__(self):
         self.now = 0
-        self.queue: List[EventLike] = []
+        self.queue: List[QueueItem] = []
         self._status: EngineStatus = EngineStatus(
             state=EngineState.WAITING,
             message="Initialized",
@@ -83,11 +144,12 @@ class Engine:
         """Returns whether the current engine state evaluates to the provided one"""
         return self.state == state
 
-    def schedule(self, event: EventLike) -> None:
+    def schedule(self, event: EventLike, timestep: int = None) -> None:
         """Schedule an event to the queue"""
 
         if isinstance(event, EventLike):
-            heapq.heappush(self.queue, event)
+            timestep = timestep or event.timestep
+            heapq.heappush(self.queue, QueueItem(timestep, event))
 
     def stop(self, msg: str) -> None:
         """Stops the engine with a message"""
@@ -117,14 +179,15 @@ class Engine:
                 self.finish(f"Simulation finished at {self.now}")
                 return
 
-            event = heapq.heappop(self.queue)
-
-            if stop_at is not None and event.timestamp > stop_at:
+            queue_item = heapq.heappop(self.queue)
+            timestep = queue_item.timestep
+            event = queue_item.event
+            if stop_at is not None and timestep > stop_at:
                 self.now = stop_at
                 self.stop(f"Simulation max time {stop_at} exceeded")
                 return
             else:
-                self.now = event.timestamp
+                self.now = timestep
 
             if not self.consume_event(event):
                 return
@@ -132,13 +195,17 @@ class Engine:
     def consume_event(self, event: EventLike):
         """Processes an event, checks for errors and schedules any events that are yielded"""
         try:
-            for evt in event():
+            for evt in event.call():
                 if evt:
                     self.schedule(evt)
 
         except StopEngineError as e:
-            self.stop(f"Simulation was stopped by event {event} at t {self.now}: {e}")
+            self.stop(
+                f"Simulation was stopped by event {event.name} at t {self.now}: {e}"
+            )
         except EventError as e:
-            self.abort(f"Simulation was aborted by event {event} at t{self.now}: {e}")
+            self.abort(
+                f"Simulation was aborted by event {event.name} at t{self.now}: {e}"
+            )
         else:
             return True

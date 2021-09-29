@@ -1,7 +1,6 @@
 """Test the Event engine"""
 import pytest
-from tfin.engine import Engine, EngineState
-from tfin.event import Event, EventError, StopEngineError
+from tfin.engine import Engine, EngineState, Event, EventError, StopEngineError
 
 
 @pytest.fixture
@@ -13,22 +12,23 @@ class EmptyEvent(Event):
     """An event to use in testing"""
 
 
-def event_factory(event_cls=EmptyEvent, timestamp=0, name="Test Event", data={}):
-    return event_cls(timestamp=timestamp, name=name, data=data)
+def event_factory(event_cls=EmptyEvent, timestep=0, name="Test Event", data={}):
+    return event_cls(timestep=timestep, name=name, data=data)
 
 
 def test_engine_scheduling(engine):
-    """Tests that the engine schedules events sorted by timestamp"""
+    """Tests that the engine schedules events sorted by timestep"""
     assert len(engine.queue) == 0, "Queue not empty"
-    event = event_factory(timestamp=3)
+    event = event_factory(timestep=3)
     engine.schedule(event)
     assert len(engine.queue) == 1, "Queue still empty"
-    assert engine.queue[0] == event
+    assert engine.queue[0].event == event
+    assert engine.queue[0].timestep == 3
 
-    event2 = event_factory(timestamp=1)
+    event2 = event_factory(timestep=1)
     engine.schedule(event2)
 
-    assert engine.queue[0] == event2, "Queue priority not being enforced"
+    assert engine.queue[0].event == event2, "Queue priority not being enforced"
 
 
 def test_engine_schedule_bad_input(engine):
@@ -48,7 +48,7 @@ def test_engine_init(engine):
 def test_engine_str(engine):
     """Test the custom str representation of the engine"""
     for i in range(3):
-        engine.schedule(event_factory(timestamp=i))
+        engine.schedule(event_factory(timestep=i))
 
     assert "3 events" in str(engine), str(engine)
 
@@ -67,8 +67,8 @@ def test_engine_status_finished(engine):
 
 def test_engine_status_stopped(engine):
     """Tests when the engine stops itself at a fixed time"""
-    engine.schedule(event_factory(timestamp=1))
-    engine.schedule(event_factory(timestamp=5))
+    engine.schedule(event_factory(timestep=1))
+    engine.schedule(event_factory(timestep=5))
 
     stop_at = 3
     engine.run(stop_at=stop_at)
@@ -132,7 +132,7 @@ def test_engine_consuming_events(engine):
 
         def call(self):
             for i in range(3):
-                yield EmptyEvent(self.timestamp + 2 * i, f"Yielded Event {i}")
+                yield EmptyEvent(self.timestep + 2 * i, f"Yielded Event {i}")
 
     engine.schedule(SimpleEvent(2, "Top Event"))
     engine.run()

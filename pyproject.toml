@@ -1,15 +1,12 @@
-[tool.poetry]
+[project]
 name = "tfin"
-version = "0.1.1"
+version = "0.1.2-dev"
 description = "An event driven business and financial simulator"
-authors = ["TvB"]
+authors = [{name="Tim van Boxtel", email="tim@vanboxtel.ca"}]
 license = "MIT"
+requires-python = ">3.9"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-
-[tool.poetry.dev-dependencies]
-black = "\b"
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
 pytest-cov = "^2.12.1"
 mypy = "^0.910"

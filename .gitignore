@@ -1,4 +1,21 @@
+# Python caching and bytecode optimized files
 *.py[co]
-.coverage
-.vscode/
 __pycache__
+
+# Testing and coverage files
+.coverage
+
+# Build and Distribution files
+dist/
+build/
+*.egg
+*.whl
+*.tar.gz
+
+# Development and virtualenvs
+.venv/
+.vscode/
+
+# Log files
+log/
+*.log

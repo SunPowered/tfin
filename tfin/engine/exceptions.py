@@ -1,3 +1,4 @@
+from .event import Event
 
 class EngineError(Exception):  # pragma: no cover
     """The simulation encountered an error"""

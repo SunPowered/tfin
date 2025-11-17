@@ -22,3 +22,6 @@ source = ["tfin"]
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.mypy]
+check_untyped_defs = true

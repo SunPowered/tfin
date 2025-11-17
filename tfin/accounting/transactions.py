@@ -56,7 +56,7 @@ class Transaction(Event):
         """A float property of the total amount of credits in the transaction"""
         return sum([i.amount for i in self._credits])
 
-    def add_debit(self, item: Account | TransactionItem, amount: float = None):
+    def add_debit(self, item: Account | TransactionItem, amount: float | None = None):
         """Adds a TransactionItem to the debits"""
         if isinstance(item, Account):
             if amount is None:
@@ -69,7 +69,7 @@ class Transaction(Event):
 
         self._debits.append(trans_item)
 
-    def add_credit(self, item: Account | TransactionItem, amount: float = None):
+    def add_credit(self, item: Account | TransactionItem, amount: float | None = None):
         """Adds a TransactionItem to the credits"""
         if isinstance(item, Account):
             if amount is None:

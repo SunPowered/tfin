@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from .types import N, C
+from collections.abc import Callable
+from .types import N
 from .enums import AccountType
 
 @dataclass
@@ -19,27 +20,32 @@ class AccountBase:
     def set_balance(self, amount: N):
         self._balance = float(amount)
 
-    def __str__(self):
-        return f"{self.name}[{self.account_type.name} - ${self.balance:.2f}]"
-    
+   
+type NumericOp = Callable[[float], float]
+
 class Account(AccountBase):
     """Account abstract dataclass.
 
     Do not instantiate directly.  It is useful, however, as a typing reference and
     for isinstance() checks"""
 
-    debit_op: C
-    credit_op: C
+    debit_op: NumericOp
+    credit_op: NumericOp
+    
     account_type: AccountType
 
     def debit(self, amount: N):
         """Debit the account by an amount."""
-        self.set_balance(self.__class__.debit_op(self.balance, float(amount)))
+        # TODO: Fix the typing issue on refactor
+        self.set_balance(self.__class__.debit_op(self.balance, float(amount)))  # type: ignore
 
     def credit(self, amount: N):
         """Credit the account by an amount"""
-        self.set_balance(self.__class__.credit_op(self.balance, float(amount)))
+        # TODO: Fix the typing issue on refactor
+        self.set_balance(self.__class__.credit_op(self.balance, float(amount))) # type: ignore
 
+    def __str__(self):
+        return f"{self.name}[{self.account_type.name} - ${self.balance:.2f}]"
 
 class AssetLike:
     """Mixin to manage the asset like accounts wrt to the operation of debit and credit"""
@@ -84,8 +90,9 @@ class Expense(Account, AssetLike):
 
     account_type = AccountType.EXPENSE
 
+AccountTypes = Asset | Liability | Equity | Income | Expense
 
-accounts_by_type: dict[AccountType, Account] = {
+accounts_by_type: dict[AccountType, type[Account]] = {
     AccountType.ASSET: Asset,
     AccountType.LIABILITY: Liability,
     AccountType.EQUITY: Equity,

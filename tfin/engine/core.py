@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import heapq
 
 from .enums import EngineState
-from .event import EventLike
+from .event import Event, EventLike
 from .exceptions import EventError, StopEngineError
 
 @dataclass
@@ -16,7 +16,7 @@ class EngineStatus:
 @dataclass(order=True)
 class QueueItem:
     timestep: int
-    event: EventLike = field(compare=False)
+    event: Event = field(compare=False)
 
 
 @dataclass
@@ -62,10 +62,10 @@ class Engine:
         """Returns whether the current engine state evaluates to the provided one"""
         return self.state == state
 
-    def schedule(self, event: EventLike, timestep: int = None) -> None:
+    def schedule(self, event: Event, timestep: int | None = None) -> None:
         """Schedule an event to the queue"""
 
-        if isinstance(event, EventLike):
+        if isinstance(event, Event):
             timestep = timestep or event.timestep
             heapq.heappush(self.queue, QueueItem(timestep, event))
 
@@ -81,7 +81,7 @@ class Engine:
         """Finish the program"""
         self.set_status(EngineState.FINISHED, msg)
 
-    def run(self, stop_at: int = None) -> None:
+    def run(self, stop_at: int | None = None) -> None:
         """Runs the simulation.
 
         This involves continually retrieving events from the queue until
@@ -110,7 +110,7 @@ class Engine:
             if not self.consume_event(event):
                 return
 
-    def consume_event(self, event: EventLike):
+    def consume_event(self, event: Event):
         """Processes an event, checks for errors and schedules any events that are yielded"""
         try:
             for evt in event.call():
@@ -127,3 +127,5 @@ class Engine:
             )
         else:
             return True
+        
+        return False

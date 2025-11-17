@@ -1,6 +1,6 @@
 from .types import N
 from .enums import AccountType
-from .core import Account, Asset, Liability, Income, Expense, Equity, accounts_by_type
+from .core import Account, Asset, Liability, Income, Expense, Equity, accounts_by_type, AccountTypes
 
 class ChartOfAccounts:
     """A chart of accounts that can manage and filter accounts"""
@@ -47,7 +47,7 @@ class ChartOfAccounts:
         if accounts and account.name in accounts:
             del self._accounts[account.account_type.name][account.name]
 
-    def _create_account(self, acc_cls: Account, name: str, balance: float = 0.0):
+    def _create_account(self, acc_cls: type[AccountTypes], name: str, balance: float = 0.0):
         account = acc_cls(name, balance)
         self.add_account(account)
         return account
@@ -84,7 +84,8 @@ class ChartOfAccounts:
         if not cast_account_type:
             return None
 
-        account = accounts_by_type[cast_account_type](
+        account_cls = accounts_by_type[cast_account_type]
+        account = account_cls(
             name=account_name, starting_balance=float(starting_balance)
         )
         self.add_account(account)

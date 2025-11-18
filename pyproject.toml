@@ -24,4 +24,5 @@ source = ["tfin"]
 show_missing = true
 
 [tool.mypy]
+files=["tfin"]
 check_untyped_defs = true

@@ -1,3 +1,4 @@
+from typing import Iterator
 from dataclasses import dataclass
 
 from .core import Account
@@ -10,6 +11,16 @@ class TransactionItem:
     account: Account
     amount: float
 
+class TransactionError(Exception):
+    def __init__(self, transaction: Transaction, msg: str):
+        self.transaction = transaction
+        super().__init__(msg)
+
+class UnbalancedTransactionError(TransactionError):
+
+    def __init__(self, transaction: Transaction):
+        super().__init__(transaction=transaction, msg=f"Transaction {transaction} is not balanced")
+
 
 class Transaction(Event):
     """A transaction event to manage accounting transactions between accounts
@@ -18,7 +29,8 @@ class Transaction(Event):
     belongs to an account and an amount"""
 
     def __init__(self, timestep: int, name: str):
-        super().__init__(timestep, name)
+        self.timestep = timestep
+        self.name = name
         self.clear()
 
     def clear(self):
@@ -82,10 +94,10 @@ class Transaction(Event):
 
         self._credits.append(trans_item)
 
-    def call(self, *args):
+    def call(self, **kwargs) -> Iterator[Event]:
         """Executes the transaction, applying credits and debits to accounts"""
         if not self.is_balanced:
-            return
+            raise UnbalancedTransactionError(self)
 
         for item in self._credits:
             item.account.credit(item.amount)
@@ -93,4 +105,4 @@ class Transaction(Event):
         for item in self._debits:
             item.account.debit(item.amount)
 
-        yield None
+        return iter([])

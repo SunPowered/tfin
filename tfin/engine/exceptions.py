@@ -12,6 +12,13 @@ class EngineError(Exception):  # pragma: no cover
     def __str__(self):
         return f"{self.now}: {self.message}"
 
+class UnhandledEngineError(EngineError):
+    """An exception was caught by the engine that has not been handled, this error encapsulates that event"""
+
+    def __init__(self, now: int, exc: Exception):
+        self.exc = exc
+        super().__init__(now, f"The Engine encoutered an unhandled exception.  {exc.__class__.__name__}: {exc}")
+
 
 class EventError(Exception):
     """Base error raised by Events"""

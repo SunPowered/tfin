@@ -2,7 +2,7 @@ import pytest
 
 from tests.engine.conftest import event_factory, EmptyEvent
 
-from tfin.engine import EngineState, StopEngineError, Event, EventError
+from tfin.engine import EngineState, StopEngineError, Event, EventError, UnhandledEngineError
 
 def test_engine_scheduling(engine):
     """Tests that the engine schedules events sorted by timestep"""
@@ -59,11 +59,15 @@ def test_engine_status_stopped(engine):
 def test_engine_stopped_by_event(engine):
     """Tests when an event forces the engine to stop"""
 
-    class StopEvent(Event):
+    class TestStopEvent(Event):
+        def __init__(self, timestep:int = 0, name: str = "Test Stop Event"):
+            self.timestep = timestep
+            self.name = name
+
         def call(self):
             raise StopEngineError(self, "I've been a bad event")
 
-    engine.schedule(event_factory(StopEvent))
+    engine.schedule(TestStopEvent())
     engine.run()
 
     assert (
@@ -75,10 +79,14 @@ def test_engine_abort(engine):
     """Tests status when an event purposefully errors out"""
 
     class ErroredEvent(Event):
-        def call(self):
-            raise EventError(self, "This is a general error")
+        def __init__(self, timestep:int=0, name="Error Event"):
+            self.timestep = timestep
+            self.name = name
 
-    engine.schedule(event_factory(ErroredEvent))
+        def call(self):
+            raise EventError(self, "This is a general error produced by the engine")
+
+    engine.schedule(ErroredEvent())
     engine.run()
 
     assert (
@@ -89,12 +97,16 @@ def test_engine_abort(engine):
 def test_engine_error(engine):
     """Tests when an event errors out unexpectedly"""
 
-    class EvilEvent(Event):
-        def call(self, *args):
-            raise ValueError("This is a poorly written event")
+    class TestEvilEvent(Event):
+        def __init__(self, timestep=0, name="Evil Event"):
+            self.timestep = timestep
+            self.name = name
 
-    engine.schedule(event_factory(EvilEvent))
-    with pytest.raises(ValueError):
+        def call(self):
+            raise ValueError("This is an unhandled exception in the event")
+
+    engine.schedule(TestEvilEvent())
+    with pytest.raises(UnhandledEngineError):
         engine.run()
 
 
@@ -104,6 +116,10 @@ def test_engine_consuming_events(engine):
     class SimpleEvent(Event):
         """Event that yields several empty events"""
 
+        def __init__(self, timestep:int, name="Top Event"):
+            self.timestep = timestep
+            self.name = name
+            
         def call(self):
             for i in range(3):
                 yield EmptyEvent(self.timestep + 2 * i, f"Yielded Event {i}")

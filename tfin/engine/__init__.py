@@ -1,6 +1,6 @@
 from .enums import EngineState
 from .event import Event
-from .exceptions import EventError, EngineError, StopEngineError
+from .exceptions import EventError, EngineError, StopEngineError, UnhandledEngineError
 from .core import Engine, EngineStatus
 
 __all__ = [
@@ -11,4 +11,5 @@ __all__ = [
     "Event",
     "EventError",
     "StopEngineError",
+    "UnhandledEngineError"
 ]

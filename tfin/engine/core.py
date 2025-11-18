@@ -3,7 +3,7 @@ import heapq
 
 from .enums import EngineState
 from .event import Event
-from .exceptions import EventError, StopEngineError
+from .exceptions import EventError, StopEngineError, UnhandledEngineError
 
 @dataclass
 class EngineStatus:
@@ -122,6 +122,8 @@ class Engine:
             self.abort(
                 f"Simulation was aborted by event {event.name} at t{self.now}: {e}"
             )
+        except Exception as e:
+            raise UnhandledEngineError(self.now, e)
         else:
             return True
         

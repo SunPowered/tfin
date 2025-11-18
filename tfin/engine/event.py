@@ -1,27 +1,14 @@
-from abc import abstractmethod
-from typing import runtime_checkable, Iterator, Protocol
+
+from typing import Iterator, Protocol, runtime_checkable
 
 @runtime_checkable
-class EventLike(Protocol):
-    """An Event like interface to use in typing"""
-
-    timestep: int
-    name: str
-
-    @abstractmethod
-    def call(self, *args):
-        """Executes the event callback"""
-
-
-class Event:
+class Event(Protocol):
     """The core Event object"""
 
-    def __init__(self, timestep: int, name: str, data: dict = {}):
-        self.timestep = timestep
-        self.name = name
-        self.data = data
+    timestep: int       # The timestep to process the event
+    name: str           # The name of the event
 
-    def call(self, ctx: dict = {}) -> Iterator["Event" | None]:
+    def call(self, **kwargs) -> Iterator[Event]:
         """The event callback function.
 
         This is the business end of the event.  It's job is to decide from the context which events to fire and when.
@@ -32,4 +19,4 @@ class Event:
         The engine will pass a yet ill-defined simulation context dictionary that should contain all relevant context
         objects an event would need
         """
-        yield None
+        ...

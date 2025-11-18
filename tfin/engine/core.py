@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import heapq
 
 from .enums import EngineState
-from .event import Event, EventLike
+from .event import Event
 from .exceptions import EventError, StopEngineError
 
 @dataclass
@@ -18,17 +18,14 @@ class QueueItem:
     timestep: int
     event: Event = field(compare=False)
 
-
-@dataclass
 class Engine:
     """The core simulation engine.
 
     The engine is responsible for managing the event queue and running the entire simulation
     """
 
-    name: str = "Unnamed"  # The name of this engine
-
-    def __post_init__(self):
+    def __init__(self, name: str | None = None):
+        self.name = name
         self.now = 0
         self.queue: list[QueueItem] = []
         self._status: EngineStatus = EngineStatus(

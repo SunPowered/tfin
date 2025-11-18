@@ -1,5 +1,5 @@
 import pytest
-from tfin.accounting import Transaction, TransactionItem
+from tfin.accounting import Transaction, TransactionItem, UnbalancedTransactionError
 
 @pytest.fixture
 def transaction():
@@ -40,8 +40,9 @@ def test_unbalanced_transaction(transaction, asset):
 
     assert not transaction.is_balanced
 
-    for _ in transaction.call():
-        pass
+    with pytest.raises(UnbalancedTransactionError):
+        for _ in transaction.call():
+            pass
 
     assert asset.balance == 0
 
@@ -67,7 +68,8 @@ def test_bad_transaction(transaction, asset):
 
     transaction.add_credit(TransactionItem(asset, 55))
 
-    transaction.call()
+    with pytest.raises(UnbalancedTransactionError):
+        transaction.call()
 
     assert asset.balance == 100
 

@@ -1,7 +1,7 @@
 from .enums import AccountType
 from .core import Account, Asset, Liability, Equity, Income, Expense, accounts_by_type
 from .chart_of_accounts import ChartOfAccounts
-from .transactions import TransactionItem, Transaction
+from .transactions import TransactionItem, Transaction, UnbalancedTransactionError
 
 __all__ = [
     "Account",
@@ -15,4 +15,5 @@ __all__ = [
     "ChartOfAccounts",
     "TransactionItem",
     "Transaction",
+    "UnbalancedTransactionError"
 ]

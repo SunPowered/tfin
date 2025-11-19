@@ -4,6 +4,8 @@ __pycache__
 
 # Testing and coverage files
 .coverage
+.pytest_cache/
+.mypy_cache/
 
 # Build and Distribution files
 dist/

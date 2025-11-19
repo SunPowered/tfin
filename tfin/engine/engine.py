@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
-import heapq
+from dataclasses import dataclass
 
 from .enums import EngineState
 from .event import Event, BaseEvent
+from .queue import EngineQueue, QueueItem
 from .exceptions import EventError, StopEngineError, UnhandledEngineError
 
 @dataclass
@@ -11,12 +11,6 @@ class EngineStatus:
 
     state: EngineState
     message: str
-
-
-@dataclass(order=True)
-class QueueItem:
-    timestep: int
-    event: Event = field(compare=False)
 
 class Engine:
     """The core simulation engine.
@@ -27,8 +21,8 @@ class Engine:
     def __init__(self, name: str | None = None):
         self.name = name
         self.now = 0
-        self.queue: list[QueueItem] = []
-        self._status: EngineStatus = EngineStatus(
+        self.queue = EngineQueue()
+        self._status = EngineStatus(
             state=EngineState.WAITING,
             message="Initialized",
         )
@@ -62,10 +56,11 @@ class Engine:
     def schedule(self, event: Event, timestep: int | None = None) -> None:
         """Schedule an event to the queue"""
 
-        if isinstance(event, BaseEvent):
-            timestep = timestep or event.timestep
-            heapq.heappush(self.queue, QueueItem(timestep, event))
-
+        if timestep is None:
+            timestep = self.now
+        
+        self.queue.push(event, timestep)
+        
     def stop(self, msg: str) -> None:
         """Stops the engine with a message"""
         self.set_status(EngineState.STOPPED, msg)
@@ -90,11 +85,11 @@ class Engine:
         )
 
         while True:
-            if not self.queue:
+            try:
+                queue_item = self.queue.pop()
+            except IndexError:
                 self.finish(f"Simulation finished at {self.now}")
                 return
-
-            queue_item = heapq.heappop(self.queue)
             timestep = queue_item.timestep
             event = queue_item.event
             if stop_at is not None and timestep > stop_at:
@@ -112,7 +107,7 @@ class Engine:
         try:
             for evt in event.call():
                 if evt:
-                    self.schedule(evt)
+                    self.schedule(evt, timestep=evt.timestep)
 
         except StopEngineError as e:
             self.stop(

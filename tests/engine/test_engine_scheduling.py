@@ -42,7 +42,7 @@ def test_engine_stopped_by_event(engine):
             self.timestep = timestep
             self.name = name
 
-        def call(self):
+        def __call__(self):
             raise StopEngineError(self, "I've been a bad event")
 
     engine.schedule(TestStopEvent(timestep=engine.now))
@@ -61,7 +61,7 @@ def test_engine_abort(engine):
             self.timestep = timestep
             self.name = name
 
-        def call(self):
+        def __call__(self):
             raise EventError(self, "This is a general error produced by the engine")
 
     engine.schedule(ErroredEvent(timestep=engine.now))
@@ -80,7 +80,7 @@ def test_engine_error(engine):
             self.timestep = timestep
             self.name = name
 
-        def call(self):
+        def __call__(self):
             raise ValueError("This is an unhandled exception in the event")
 
     engine.schedule(TestEvilEvent())
@@ -98,7 +98,7 @@ def test_engine_consuming_events(engine):
             self.timestep = timestep
             self.name = name
             
-        def call(self):
+        def __call__(self):
             for i in range(3):
                 yield BaseTestEvent(self.timestep + 2 * i, f"Yielded Event {i}")
 
@@ -130,3 +130,9 @@ def test_scheduling_event_with_timestampt(engine):
     assert queue_item.event.timestep == queue_item.timestep
     assert queue_item.timestep == engine.now
 
+def test_event_scheduled_in_past(engine):
+    """Test whether scheduler throws error when given an event in the past"""
+    engine.now = 6
+
+    with pytest.raises(ValueError):
+        engine.schedule(BaseTestEvent(timestep=2))

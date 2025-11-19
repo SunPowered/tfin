@@ -64,7 +64,10 @@ class Engine:
                 timestep = event.timestep
         elif event.timestep is None:
             event.timestep = timestep
-            
+        
+        if timestep < self.now:
+            raise ValueError(f"Cannot schedule event {event} in the past: {timestep} < {self.now}")
+
         self.queue.push(event, timestep)
         
     def stop(self, msg: str) -> None:
@@ -96,8 +99,10 @@ class Engine:
             except IndexError:
                 self.finish(f"Simulation finished at {self.now}")
                 return
+            
             timestep = queue_item.timestep
             event = queue_item.event
+            
             if stop_at is not None and timestep > stop_at:
                 self.now = stop_at
                 self.stop(f"Simulation max time {stop_at} exceeded")
@@ -111,9 +116,9 @@ class Engine:
     def consume_event(self, event: Event):
         """Processes an event, checks for errors and schedules any events that are yielded"""
         try:
-            for evt in event.call():
+            for evt in event():
                 if evt:
-                    self.schedule(evt, timestep=evt.timestep)
+                    self.schedule(evt)
 
         except StopEngineError as e:
             self.stop(

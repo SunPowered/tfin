@@ -1,14 +1,13 @@
 
 from typing import Iterator, Protocol
 
-# @runtime_checkable
 class Event(Protocol):
     """The core Event object"""
 
     timestep: int       # The timestep to process the event
     name: str           # The name of the event
 
-    def call(self, **kwargs) -> Iterator[Event]:
+    def __call__(self, **kwargs) -> Iterator[Event]:
         """The event callback function.
 
         This is the business end of the event.  It's job is to decide from the context which events to fire and when.
@@ -20,7 +19,7 @@ class Event(Protocol):
         objects an event would need
         """
         ...
-
+    
 class BaseEvent:
     """
     The base Event class to be subclassed by user events
@@ -32,7 +31,6 @@ class BaseEvent:
         self.timestep = timestep
         self.name = name
 
-    def call(self):
+    def __call__(self, **kwargs):
 
         return iter([])
-

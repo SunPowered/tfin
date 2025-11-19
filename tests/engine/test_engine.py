@@ -1,4 +1,4 @@
-from tests.engine.conftest import event_factory
+from tests.engine.conftest import BaseTestEvent
 
 from tfin.engine import EngineState
 
@@ -11,6 +11,5 @@ def test_engine_init(engine):
 def test_engine_str(engine):
     """Test the custom str representation of the engine"""
     for i in range(3):
-        engine.schedule(event_factory(timestep=i))
-
+        engine.schedule(BaseTestEvent(timestep=i, name=f"Event {i}"))
     assert "3 events" in str(engine), str(engine)

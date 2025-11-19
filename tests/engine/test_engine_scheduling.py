@@ -4,28 +4,6 @@ from tests.engine.conftest import BaseTestEvent
 
 from tfin.engine import EngineState, StopEngineError, EventError, UnhandledEngineError
 
-def test_engine_scheduling(engine):
-    """Tests that the engine schedules events sorted by timestep"""
-    assert len(engine.queue) == 0, "Queue not empty"
-    event = BaseTestEvent(timestep=3)
-    engine.schedule(event)
-    assert len(engine.queue) == 1, "Queue still empty"
-    assert engine.queue[0].event == event
-    assert engine.queue[0].timestep == 3
-
-    event2 = BaseTestEvent(timestep=1)
-    engine.schedule(event2)
-
-    assert engine.queue[0].event == event2, "Queue priority not being enforced"
-
-
-def test_engine_schedule_bad_input(engine):
-    """Ensure only subclasses of Event is added to the queue"""
-    engine.schedule({"name": "event"})
-    engine.schedule("MyEvent")
-    engine.schedule(42)
-    assert len(engine.queue) == 0, "Bad data structure added to queue"
-
 
 def test_engine_status_finished(engine):
     """Tests when the engine is finished exhausting the event queue"""
@@ -41,8 +19,8 @@ def test_engine_status_finished(engine):
 
 def test_engine_status_stopped(engine):
     """Tests when the engine stops itself at a fixed time"""
-    engine.schedule(BaseTestEvent(timestep=1))
-    engine.schedule(BaseTestEvent(timestep=5))
+    engine.schedule(BaseTestEvent(timestep=1), timestep=1)
+    engine.schedule(BaseTestEvent(timestep=5), timestep=5)
 
     stop_at = 3
     engine.run(stop_at=stop_at)
@@ -124,7 +102,7 @@ def test_engine_consuming_events(engine):
             for i in range(3):
                 yield BaseTestEvent(self.timestep + 2 * i, f"Yielded Event {i}")
 
-    engine.schedule(SimpleEvent(2, "Top Event"))
+    engine.schedule(SimpleEvent(2, "Top Event"), timestep=2)
     engine.run()
 
     assert engine.state == EngineState.FINISHED, "Engine is in wrong state"

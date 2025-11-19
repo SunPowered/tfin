@@ -27,10 +27,10 @@ class BaseEvent:
     
     TODO: Allow timestep = None and have the Engine assign it to the next available timestep when scheduled
     """
-    def __init__(self, timestep: int, name: str | None = None):
+    def __init__(self, timestep: int | None = None, name: str | None = None):
 
         self.timestep = timestep
-        self.name = name or "Unnamed Event"
+        self.name = name
 
     def call(self):
 

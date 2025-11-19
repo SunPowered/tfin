@@ -57,8 +57,14 @@ class Engine:
         """Schedule an event to the queue"""
 
         if timestep is None:
-            timestep = self.now
-        
+            if event.timestep is None:
+                timestep = self.now
+                event.timestep = timestep
+            else:
+                timestep = event.timestep
+        elif event.timestep is None:
+            event.timestep = timestep
+            
         self.queue.push(event, timestep)
         
     def stop(self, msg: str) -> None:

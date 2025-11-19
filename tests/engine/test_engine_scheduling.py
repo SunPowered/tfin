@@ -107,3 +107,26 @@ def test_engine_consuming_events(engine):
 
     assert engine.state == EngineState.FINISHED, "Engine is in wrong state"
     assert engine.now == 6, f"Simulation should be at timestep 6, not {engine.now}"
+
+def test_scheduling_event_with_timestampt(engine):
+    """Schedule events with and without timestamp"""
+    engine.schedule(BaseTestEvent(timestep=3))
+
+    engine.schedule(BaseTestEvent(), timestep=4)
+
+    assert len(engine.queue) == 2
+
+    queue_item = engine.queue.pop()
+    assert queue_item.event.timestep == queue_item.timestep
+    assert queue_item.timestep == 3
+
+    queue_item = engine.queue.pop()
+    assert queue_item.event.timestep == queue_item.timestep
+    assert queue_item.timestep == 4
+
+    engine.schedule(BaseTestEvent())
+    
+    queue_item = engine.queue.pop()
+    assert queue_item.event.timestep == queue_item.timestep
+    assert queue_item.timestep == engine.now
+

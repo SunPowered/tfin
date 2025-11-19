@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import heapq
 
 from .enums import EngineState
-from .event import Event
+from .event import Event, BaseEvent
 from .exceptions import EventError, StopEngineError, UnhandledEngineError
 
 @dataclass
@@ -62,7 +62,7 @@ class Engine:
     def schedule(self, event: Event, timestep: int | None = None) -> None:
         """Schedule an event to the queue"""
 
-        if isinstance(event, Event):
+        if isinstance(event, BaseEvent):
             timestep = timestep or event.timestep
             heapq.heappush(self.queue, QueueItem(timestep, event))
 
@@ -118,10 +118,12 @@ class Engine:
             self.stop(
                 f"Simulation was stopped by event {event.name} at t {self.now}: {e}"
             )
+            return False
         except EventError as e:
             self.abort(
                 f"Simulation was aborted by event {event.name} at t{self.now}: {e}"
             )
+            return False
         except Exception as e:
             raise UnhandledEngineError(self.now, e)
         else:

@@ -1,19 +1,19 @@
 import pytest
 
-from tests.engine.conftest import event_factory, EmptyEvent
+from tests.engine.conftest import BaseTestEvent
 
-from tfin.engine import EngineState, StopEngineError, Event, EventError, UnhandledEngineError
+from tfin.engine import EngineState, StopEngineError, EventError, UnhandledEngineError
 
 def test_engine_scheduling(engine):
     """Tests that the engine schedules events sorted by timestep"""
     assert len(engine.queue) == 0, "Queue not empty"
-    event = event_factory(timestep=3)
+    event = BaseTestEvent(timestep=3)
     engine.schedule(event)
     assert len(engine.queue) == 1, "Queue still empty"
     assert engine.queue[0].event == event
     assert engine.queue[0].timestep == 3
 
-    event2 = event_factory(timestep=1)
+    event2 = BaseTestEvent(timestep=1)
     engine.schedule(event2)
 
     assert engine.queue[0].event == event2, "Queue priority not being enforced"
@@ -30,7 +30,7 @@ def test_engine_schedule_bad_input(engine):
 def test_engine_status_finished(engine):
     """Tests when the engine is finished exhausting the event queue"""
 
-    engine.schedule(event_factory())
+    engine.schedule(BaseTestEvent(timestep=engine.now))
 
     engine.run()
 
@@ -41,8 +41,8 @@ def test_engine_status_finished(engine):
 
 def test_engine_status_stopped(engine):
     """Tests when the engine stops itself at a fixed time"""
-    engine.schedule(event_factory(timestep=1))
-    engine.schedule(event_factory(timestep=5))
+    engine.schedule(BaseTestEvent(timestep=1))
+    engine.schedule(BaseTestEvent(timestep=5))
 
     stop_at = 3
     engine.run(stop_at=stop_at)
@@ -59,7 +59,7 @@ def test_engine_status_stopped(engine):
 def test_engine_stopped_by_event(engine):
     """Tests when an event forces the engine to stop"""
 
-    class TestStopEvent(Event):
+    class TestStopEvent(BaseTestEvent):
         def __init__(self, timestep:int = 0, name: str = "Test Stop Event"):
             self.timestep = timestep
             self.name = name
@@ -67,18 +67,18 @@ def test_engine_stopped_by_event(engine):
         def call(self):
             raise StopEngineError(self, "I've been a bad event")
 
-    engine.schedule(TestStopEvent())
+    engine.schedule(TestStopEvent(timestep=engine.now))
     engine.run()
 
     assert (
         engine.state == EngineState.STOPPED
-    ), "StopSimulationError did not trigger an engine STOP"
+    ), "StopEngineError did not trigger an engine STOP"
 
 
 def test_engine_abort(engine):
     """Tests status when an event purposefully errors out"""
 
-    class ErroredEvent(Event):
+    class ErroredEvent(BaseTestEvent):
         def __init__(self, timestep:int=0, name="Error Event"):
             self.timestep = timestep
             self.name = name
@@ -86,7 +86,7 @@ def test_engine_abort(engine):
         def call(self):
             raise EventError(self, "This is a general error produced by the engine")
 
-    engine.schedule(ErroredEvent())
+    engine.schedule(ErroredEvent(timestep=engine.now))
     engine.run()
 
     assert (
@@ -97,7 +97,7 @@ def test_engine_abort(engine):
 def test_engine_error(engine):
     """Tests when an event errors out unexpectedly"""
 
-    class TestEvilEvent(Event):
+    class TestEvilEvent(BaseTestEvent):
         def __init__(self, timestep=0, name="Evil Event"):
             self.timestep = timestep
             self.name = name
@@ -113,7 +113,7 @@ def test_engine_error(engine):
 def test_engine_consuming_events(engine):
     """Test the engine consuming an event that yields several new events"""
 
-    class SimpleEvent(Event):
+    class SimpleEvent(BaseTestEvent):
         """Event that yields several empty events"""
 
         def __init__(self, timestep:int, name="Top Event"):
@@ -122,7 +122,7 @@ def test_engine_consuming_events(engine):
             
         def call(self):
             for i in range(3):
-                yield EmptyEvent(self.timestep + 2 * i, f"Yielded Event {i}")
+                yield BaseTestEvent(self.timestep + 2 * i, f"Yielded Event {i}")
 
     engine.schedule(SimpleEvent(2, "Top Event"))
     engine.run()

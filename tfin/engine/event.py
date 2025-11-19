@@ -1,7 +1,7 @@
 
-from typing import Iterator, Protocol, runtime_checkable
+from typing import Iterator, Protocol
 
-@runtime_checkable
+# @runtime_checkable
 class Event(Protocol):
     """The core Event object"""
 
@@ -20,3 +20,19 @@ class Event(Protocol):
         objects an event would need
         """
         ...
+
+class BaseEvent:
+    """
+    The base Event class to be subclassed by user events
+    
+    TODO: Allow timestep = None and have the Engine assign it to the next available timestep when scheduled
+    """
+    def __init__(self, timestep: int, name: str | None = None):
+
+        self.timestep = timestep
+        self.name = name or "Unnamed Event"
+
+    def call(self):
+
+        return iter([])
+

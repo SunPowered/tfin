@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .enums import EngineState
-from .event import Event, BaseEvent
+from .event import Event
 from .queue import EngineQueue, QueueItem
 from .exceptions import EventError, StopEngineError, UnhandledEngineError
 
@@ -134,5 +134,4 @@ class Engine:
             raise UnhandledEngineError(self.now, e)
         else:
             return True
-        
         return False

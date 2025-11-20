@@ -1,1 +1,9 @@
 site_name: tFin Docs
+repo_url: https://github.com/SunPowered/tfin
+repo_name: Github
+site_description: An event driven financial engine simulator
+site_author: Tim van Boxtel
+
+nav:
+  - Home: 'index.md'
+  - Getting Started: 'getting_started.md'

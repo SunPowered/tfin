@@ -2,7 +2,7 @@ from typing import Iterator
 from dataclasses import dataclass
 
 from .core import Account
-from ..engine import Event
+from ..engine import BaseEvent, Event
 
 @dataclass
 class TransactionItem:
@@ -22,7 +22,7 @@ class UnbalancedTransactionError(TransactionError):
         super().__init__(transaction=transaction, msg=f"Transaction {transaction} is not balanced")
 
 
-class Transaction(Event):
+class Transaction(BaseEvent):
     """A transaction event to manage accounting transactions between accounts
 
     A transaction consists of both debits and credits.  Each debit/credit item
@@ -94,7 +94,7 @@ class Transaction(Event):
 
         self._credits.append(trans_item)
 
-    def call(self, **kwargs) -> Iterator[Event]:
+    def __call__(self, **kwargs) -> Iterator[Event]:
         """Executes the transaction, applying credits and debits to accounts"""
         if not self.is_balanced:
             raise UnbalancedTransactionError(self)

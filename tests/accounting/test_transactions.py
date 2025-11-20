@@ -27,7 +27,7 @@ def test_transaction(filled_transaction):
     asset = filled_transaction.credits[0].account
     expense = filled_transaction.debits[0].account
 
-    for _ in filled_transaction.call():
+    for _ in filled_transaction():
         pass
 
     assert expense.balance == 20, "Expense balance should be 20"
@@ -41,7 +41,7 @@ def test_unbalanced_transaction(transaction, asset):
     assert not transaction.is_balanced
 
     with pytest.raises(UnbalancedTransactionError):
-        for _ in transaction.call():
+        for _ in transaction():
             pass
 
     assert asset.balance == 0
@@ -69,7 +69,7 @@ def test_bad_transaction(transaction, asset):
     transaction.add_credit(TransactionItem(asset, 55))
 
     with pytest.raises(UnbalancedTransactionError):
-        transaction.call()
+        transaction()
 
     assert asset.balance == 100
 

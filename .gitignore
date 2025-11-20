@@ -13,6 +13,7 @@ build/
 *.egg
 *.whl
 *.tar.gz
+site/
 
 # Development and virtualenvs
 .venv/

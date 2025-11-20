@@ -52,7 +52,24 @@ I like to run with coverage before committing changes; there is a `.coveragerc` 
 
 It is expected that any active non-debug feature is covered by the test suite, and anything else is properly ignored.  
 
-100% coverage can be done!  I believe in us.
+### Type Checking
+
+Static type checking is not required in Python but is a really good idea.
+
+Run `mypy` to check the project for type errors before pushing commits
+
+## Documentation
+
+The project uses [`mkdocs`](http://www.mkdocs.org) to serve and build documentation.  
+
+Add relevant markdown files to the `docs` project folder.  The docs site is configured using the `mkdocs.yaml` file
+
+Locally, run the development docs server to see any changes updated in real time:
+
+`mnkdocs serve`
+
+Otherwise, you can build them statically via `mkdocs build`.  This creates the static web files in the `site` folder, 
+which is not tracked in version control.
 
 ## History
 
@@ -60,3 +77,4 @@ It is expected that any active non-debug feature is covered by the test suite, a
 
 * 0.1.0 - Sep 24, 2021 - Project structure, basic event and event engine
 * 0.1.1 - Sep 26, 2021 - Accounting module.  Accounts, ChartOfAccounts, and Transaction events
+* 0.1.2 - Nov 20, 2025 - Rediscovered this project and giving it some new life

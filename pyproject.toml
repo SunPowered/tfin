@@ -12,6 +12,7 @@ pytest-cov = "^7.0.0"
 pyyaml = "!=6.0.0,!=5.4.0,!=5.4.1" # pyyaml is broken with cython 3
 mypy = "^1.18.1"
 bandit = "^1.8.6"
+mkdocs = "^1.6.1"
 
 [build-system]
 requires = ["poetry-core>=2.2.0"]
